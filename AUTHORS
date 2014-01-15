@@ -94,6 +94,7 @@ Developers:
         use tinyxml2 to replace libxml2
         Added Mingw-crt Support without breaking VS SDK
         CMake support for windows.
+        Added support for x64 target of windows.
 
     mchinen
         fix emulator issue for OpenGL ES 2.0 on Android
@@ -711,6 +712,12 @@ Developers:
     v1ctor
         ControlSlider supports to set selected thumb sprite.
         ControlButton supports to set scale ratio of touchdown state
+        
+    akof1314
+        TestCpp works by using CMake and mingw on Windows.
+        
+    Pisces000221
+        Corrected a few mistakes in the README file of project-creator.
     
 Retired Core Developers:
     WenSheng Yang

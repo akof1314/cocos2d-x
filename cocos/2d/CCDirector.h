@@ -35,8 +35,9 @@ THE SOFTWARE.
 #include "CCGeometry.h"
 #include "CCVector.h"
 #include "CCGL.h"
-#include "kazmath/mat4.h"
 #include "CCLabelAtlas.h"
+
+#include "kazmath/mat4.h"
 
 
 NS_CC_BEGIN
@@ -49,7 +50,7 @@ NS_CC_BEGIN
 /* Forward declarations. */
 class LabelAtlas;
 class Scene;
-class EGLView;
+class GLView;
 class DirectorDelegate;
 class Node;
 class Scheduler;
@@ -122,8 +123,8 @@ public:
      * @js NA
      * @lua NA
      */
-    virtual ~Director(void);
-    virtual bool init(void);
+    virtual ~Director();
+    virtual bool init();
 
     // attribute
 
@@ -143,12 +144,12 @@ public:
     /** seconds per frame */
     inline float getSecondsPerFrame() { return _secondsPerFrame; }
 
-    /** Get the EGLView, where everything is rendered
+    /** Get the GLView, where everything is rendered
     * @js NA
     * @lua NA
     */
-    inline EGLView* getOpenGLView() { return _openGLView; }
-    void setOpenGLView(EGLView *openGLView);
+    inline GLView* getOpenGLView() { return _openGLView; }
+    void setOpenGLView(GLView *openGLView);
 
     TextureCache* getTextureCache() const;
 
@@ -202,7 +203,7 @@ public:
     
     /** returns visible size of the OpenGL view in points.
      *  the value is equal to getWinSize if don't invoke
-     *  EGLView::setDesignResolutionSize()
+     *  GLView::setDesignResolutionSize()
      */
     Size getVisibleSize() const;
     
@@ -422,8 +423,8 @@ protected:
     /* delta time since last tick to main loop */
 	float _deltaTime;
     
-    /* The EGLView, where everything is rendered */
-    EGLView *_openGLView;
+    /* The GLView, where everything is rendered */
+    GLView *_openGLView;
 
     //texture cache belongs to this director
     TextureCache *_textureCache;
@@ -440,7 +441,8 @@ protected:
     
     LabelAtlas *_FPSLabel;
     LabelAtlas *_SPFLabel;
-    LabelAtlas *_drawsLabel;
+    LabelAtlas *_drawnBatchesLabel;
+    LabelAtlas *_drawnVerticesLabel;
     
     /** Whether or not the Director is paused */
     bool _paused;
@@ -480,9 +482,6 @@ protected:
     /* content scale factor */
     float _contentScaleFactor;
 
-    /* store the fps string */
-    char *_FPS;
-
     /* This object will be visited after the scene. Useful to hook a notification node */
     Node *_notificationNode;
 
@@ -492,8 +491,8 @@ protected:
     /* Console for the director */
     Console *_console;
     
-    // EGLViewProtocol will recreate stats labels to fit visible rect
-    friend class EGLViewProtocol;
+    // GLViewProtocol will recreate stats labels to fit visible rect
+    friend class GLViewProtocol;
 };
 
 /** 

@@ -5,6 +5,9 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 COCOS2DX_ROOT="$DIR"/../..
 
+export NDK_ROOT=$HOME/bin/android-ndk
+export PYTHON_BIN=/usr/bin/python
+
 if [ "$GEN_JSB"x = "YES"x ]; then
     # Re-generation of the javascript bindings can perform push of the new
     # version back to github.  We don't do this for pull requests, or if
@@ -26,7 +29,7 @@ if [ "$GEN_JSB"x = "YES"x ]; then
         echo "GH_USER not set"
         exit 0
     fi
-    export NDK_ROOT=$HOME/bin/android-ndk
+
     cd $COCOS2DX_ROOT/tools/travis-scripts
     ./generate-jsbindings.sh
 elif [ "$PLATFORM"x = "android"x ]; then
@@ -42,9 +45,9 @@ elif [ "$PLATFORM"x = "android"x ]; then
     # Create a directory for temporary objects
     mkdir android_build_objs
 
-    PROJECTS=("Cpp/HelloCpp" "Cpp/TestCpp" "Cpp/SimpleGame" "Cpp/AssetsManagerTest" "Javascript/TestJavascript" "Javascript/CocosDragonJS" "Javascript/CrystalCraze" "Javascript/MoonWarriors" "Javascript/WatermelonWithMe" "Lua/HelloLua" "Lua/TestLua")
+    PROJECTS=("test-cpp" "test-javascript" "test-lua")
     for i in ${PROJECTS[*]}; do
-        ln -s $COCOS2DX_ROOT/android_build_objs $COCOS2DX_ROOT/samples/$i/proj.android/obj
+        ln -s $COCOS2DX_ROOT/android_build_objs $COCOS2DX_ROOT/tests/$i/proj.android/obj
     done
 
     # Build all samples

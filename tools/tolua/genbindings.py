@@ -86,12 +86,13 @@ def main():
     elif os.path.isdir(x64_llvm_path):
         llvm_path = x64_llvm_path
     else:
-        print 'llvm toochain not found!'
+        print 'llvm toolchain not found!'
         print 'path: %s or path: %s are not valid! ' % (x86_llvm_path, x64_llvm_path)
         sys.exit(1)
 
-    cocos_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-    cxx_generator_root = os.path.abspath(os.path.join(cocos_root, 'tools/bindings-generator'))
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    cocos_root = os.path.abspath(os.path.join(project_root, ''))
+    cxx_generator_root = os.path.abspath(os.path.join(project_root, 'tools/bindings-generator'))
 
     # save config to file
     config = ConfigParser.ConfigParser()
@@ -105,7 +106,7 @@ def main():
     if platform == 'win32':
         config.set('DEFAULT', 'extra_flags', '-D__WCHAR_MAX__=0x7fffffff -U__MINGW32__')
 
-    conf_ini_file = os.path.abspath(os.path.join(os.path.dirname(__file__), 'userconf.ini')) 
+    conf_ini_file = os.path.abspath(os.path.join(os.path.dirname(__file__), 'userconf.ini'))
 
     print 'generating userconf.ini...'
     with open(conf_ini_file, 'w') as configfile:
@@ -122,12 +123,12 @@ def main():
 
     try:
 
-        tolua_root = '%s/tools/tolua' % cocos_root
-        output_dir = '%s/cocos/scripting/auto-generated/lua-bindings' % cocos_root
+        tolua_root = '%s/tools/tolua' % project_root
+        output_dir = '%s/cocos/scripting/lua-bindings/auto' % project_root
 
         cmd_args = {'cocos2dx.ini' : ('cocos2d-x', 'lua_cocos2dx_auto'), \
                     'cocos2dx_extension.ini' : ('cocos2dx_extension', 'lua_cocos2dx_extension_auto'), \
-                    'cocos2dx_gui.ini' : ('cocos2dx_gui', 'lua_cocos2dx_gui_auto'), \
+                    'cocos2dx_ui.ini' : ('cocos2dx_ui', 'lua_cocos2dx_ui_auto'), \
                     'cocos2dx_studio.ini' : ('cocos2dx_studio', 'lua_cocos2dx_studio_auto'), \
                     'cocos2dx_spine.ini' : ('cocos2dx_spine', 'lua_cocos2dx_spine_auto'), \
                     'cocos2dx_physics.ini' : ('cocos2dx_physics', 'lua_cocos2dx_physics_auto'), \
@@ -146,18 +147,18 @@ def main():
                 _run_cmd('dos2unix *')
 
         print '---------------------------------'
-        print 'Generating bindings succeeds.'
+        print 'Generating lua bindings succeeds.'
         print '---------------------------------'
 
     except Exception as e:
         if e.__class__.__name__ == 'CmdError':
             print '---------------------------------'
-            print 'Generating bindings fails.'
+            print 'Generating lua bindings fails.'
             print '---------------------------------'
             sys.exit(1)
         else:
             raise
-    
+
 
 # -------------- main --------------
 if __name__ == '__main__':

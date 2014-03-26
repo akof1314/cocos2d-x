@@ -53,7 +53,7 @@ ActionManagerEx::~ActionManagerEx()
 	_actionDic.clear();
 }
 
-void ActionManagerEx::initWithDictionary(const char* jsonName,const rapidjson::Value &dic,Object* root)
+void ActionManagerEx::initWithDictionary(const char* jsonName,const rapidjson::Value &dic, Ref* root)
 {
 	std::string path = jsonName;
 	ssize_t pos = path.find_last_of("/");
@@ -110,10 +110,17 @@ ActionObject* ActionManagerEx::playActionByName(const char* jsonName,const char*
 	}
 	return action;
 }
-
+    
 void ActionManagerEx::releaseActions()
 {
-	_actionDic.clear();
+    std::unordered_map<std::string, cocos2d::Vector<ActionObject*>>::iterator iter;
+    for (iter = _actionDic.begin(); iter != _actionDic.end(); iter++)
+    {
+        cocos2d::Vector<ActionObject*> objList = iter->second;
+        objList.clear();
+    }
+    
+    _actionDic.clear();
 }
 
 }

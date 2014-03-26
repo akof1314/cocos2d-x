@@ -23,15 +23,18 @@
  THE SOFTWARE.
  ****************************************************************************/
 #import <Foundation/Foundation.h>
+#import <OpenGLES/EAGL.h>
 #import "CCDirectorCaller.h"
 #import "CCDirector.h"
+#import "CCGLView.h"
+#import "CCEAGLView.h"
 
 static id s_sharedDirectorCaller;
 
 @interface NSObject(CADisplayLink)
 +(id) displayLinkWithTarget: (id)arg1 selector:(SEL)arg2;
 -(void) addToRunLoop: (id)arg1 forMode: (id)arg2;
--(void) setFrameInterval: (int)interval;
+-(void) setFrameInterval: (NSInteger)interval;
 -(void) invalidate;
 @end
 
@@ -92,7 +95,9 @@ static id s_sharedDirectorCaller;
                       
 -(void) doCaller: (id) sender
 {
-    cocos2d::Director::getInstance()->mainLoop();
+    cocos2d::Director* director = cocos2d::Director::getInstance();
+    [EAGLContext setCurrentContext: [(CCEAGLView*)director->getOpenGLView()->getEAGLView() context]];
+    director->mainLoop();
 }
 
 @end

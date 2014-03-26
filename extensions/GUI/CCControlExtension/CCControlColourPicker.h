@@ -61,14 +61,14 @@ public:
      */
     virtual ~ControlColourPicker();
 
-    virtual bool init();
+    virtual bool init() override;
 
     virtual void setColor(const Color3B& colorValue);
     virtual void setEnabled(bool bEnabled);
 
     //virtual ~ControlColourPicker();
-    void hueSliderValueChanged(Object * sender, Control::EventType controlEvent);
-    void colourSliderValueChanged(Object * sender, Control::EventType controlEvent);
+    void hueSliderValueChanged(Ref * sender, Control::EventType controlEvent);
+    void colourSliderValueChanged(Ref * sender, Control::EventType controlEvent);
 
 protected:
     void updateControlPicker();

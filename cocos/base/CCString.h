@@ -33,8 +33,8 @@ THE SOFTWARE.
 #include <string>
 #include <functional>
 #include <sstream>
-
-#include "CCObject.h"
+#include "CCArray.h"
+#include "CCRef.h"
 
 NS_CC_BEGIN
 
@@ -43,7 +43,7 @@ NS_CC_BEGIN
  * @{
  */
 
-class CC_DLL __String : public Object, public Clonable
+class CC_DLL __String : public Ref, public Clonable
 {
 public:
     /**
@@ -145,7 +145,7 @@ public:
     /* override functions 
      * @js NA
      */
-    virtual bool isEqual(const Object* pObject);
+    virtual bool isEqual(const Ref* pObject);
 
     /** create a string with std string, you can also pass a c string pointer because the default constructor of std::string can access a c string pointer. 
      *  @return A String pointer which is an autorelease object pointer,
@@ -167,7 +167,7 @@ public:
      *          it means that you needn't do a release operation unless you retain it.
      * @js NA
      */
-    static __String* createWithData(const unsigned char* pData, int nLen);
+    static __String* createWithData(const unsigned char* pData, size_t nLen);
 
     /** create a string with a file, 
      *  @return A String pointer which is an autorelease object pointer,

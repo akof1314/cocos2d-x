@@ -28,7 +28,7 @@
 #include "ccConfig.h"
 #if CC_USE_PHYSICS
 
-#include "CCObject.h"
+#include "CCRef.h"
 #include "CCGeometry.h"
 #include "CCEventListenerCustom.h"
 #include "CCEvent.h"
@@ -78,6 +78,8 @@ public:
     inline PhysicsShape* getShapeB() const { return _shapeB; }
     /** get contact data */
     inline const PhysicsContactData* getContactData() const { return _contactData; }
+    /** get previous contact data */
+    inline const PhysicsContactData* getPreContactData() const { return _preContactData; }
     /** get data. */
     inline void* getData() const { return _data; }
     /**
@@ -112,12 +114,12 @@ private:
     EventCode _eventCode;
     PhysicsContactInfo* _info;
     bool _notificationEnable;
-    bool _begin;
     bool _result;
     
     void* _data;
     void* _contactInfo;
     PhysicsContactData* _contactData;
+    PhysicsContactData* _preContactData;
     
     friend class EventListenerPhysicsContact;
     friend class PhysicsWorldCallback;
@@ -130,14 +132,14 @@ private:
 class PhysicsContactPreSolve
 {
 public:
-    /** get elasticity between two bodies*/
-    float getElasticity() const;
+    /** get restitution between two bodies*/
+    float getRestitution() const;
     /** get friction between two bodies*/
     float getFriction() const;
     /** get surface velocity between two bodies*/
     Point getSurfaceVelocity() const;
-    /** set the elasticity*/
-    void setElasticity(float elasticity);
+    /** set the restitution*/
+    void setRestitution(float restitution);
     /** set the friction*/
     void setFriction(float friction);
     /** set the surface velocity*/
@@ -146,14 +148,10 @@ public:
     void ignore();
     
 private:
-    PhysicsContactPreSolve(PhysicsContactData* data, void* contactInfo);
+    PhysicsContactPreSolve(void* contactInfo);
     ~PhysicsContactPreSolve();
     
 private:
-    float _elasticity;
-    float _friction;
-    Point _surfaceVelocity;
-    PhysicsContactData* _preContactData;
     void* _contactInfo;
     
     friend class EventListenerPhysicsContact;
@@ -165,8 +163,8 @@ private:
 class PhysicsContactPostSolve
 {
 public:
-    /** get elasticity between two bodies*/
-    float getElasticity() const;
+    /** get restitution between two bodies*/
+    float getRestitution() const;
     /** get friction between two bodies*/
     float getFriction() const;
     /** get surface velocity between two bodies*/
@@ -204,7 +202,7 @@ public:
      */
     std::function<bool(PhysicsContact& contact)> onContactBegin;
     /*
-     * @brief Two shapes are touching during this step. Return false from the callback to make world ignore the collision this step or true to process it normally. Additionally, you may override collision values, elasticity, or surface velocity values.
+     * @brief Two shapes are touching during this step. Return false from the callback to make world ignore the collision this step or true to process it normally. Additionally, you may override collision values, restitution, or surface velocity values.
      */
     std::function<bool(PhysicsContact& contact, PhysicsContactPreSolve& solve)> onContactPreSolve;
     /*

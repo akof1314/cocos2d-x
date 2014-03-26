@@ -40,14 +40,14 @@ option(DEBUG_MODE "Debug or release?" ON)
 option(BUILD_LIBS_LUA "Build lua libraries" OFF)
 option(BUILD_GUI "Build GUI library" ON)
 option(BUILD_NETWORK "Build network library" ON)
+option(BUILD_STORAGE "Build storage library" ON)
 option(BUILD_EXTENSIONS "Build extension library" ON)
 option(BUILD_EDITOR_SPINE "Build editor support for spine" ON)
 option(BUILD_EDITOR_COCOSTUDIO "Build editor support for cocostudio" ON)
 option(BUILD_EDITOR_COCOSBUILDER "Build editor support for cocosbuilder" ON)
 
-option(BUILD_TestCpp "Only build TestCpp sample" ON)
-option(BUILD_TestLua "Only build TestLua sample" OFF)
-
+option(BUILD_CppTests "Only build TestCpp sample" ON)
+option(BUILD_LuaTests "Only build TestLua sample" OFF)
 else()#temp
 
 option(USE_CHIPMUNK "Use chipmunk for physics library" ON)
@@ -56,14 +56,14 @@ option(DEBUG_MODE "Debug or release?" ON)
 option(BUILD_LIBS_LUA "Build lua libraries" ON)
 option(BUILD_GUI "Build GUI library" ON)
 option(BUILD_NETWORK "Build network library" ON)
+option(BUILD_STORAGE "Build storage library" ON)
 option(BUILD_EXTENSIONS "Build extension library" ON)
 option(BUILD_EDITOR_SPINE "Build editor support for spine" ON)
 option(BUILD_EDITOR_COCOSTUDIO "Build editor support for cocostudio" ON)
 option(BUILD_EDITOR_COCOSBUILDER "Build editor support for cocosbuilder" ON)
 
-option(BUILD_TestCpp "Only build TestCpp sample" ON)
-option(BUILD_TestLua "Only build TestLua sample" ON)
-
+option(BUILD_CppTests "Only build TestCpp sample" ON)
+option(BUILD_LuaTests "Only build TestLua sample" ON)
 endif()#temp
 
 
@@ -143,7 +143,9 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/cocos/base
   ${CMAKE_CURRENT_SOURCE_DIR}/cocos/physics
   ${CMAKE_CURRENT_SOURCE_DIR}/cocos/editor-support
-  ${CMAKE_CURRENT_SOURCE_DIR}/cocos/math/kazmath/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/cocos/math/kazmath
+  ${CMAKE_CURRENT_SOURCE_DIR}/cocos/scripting/lua-bindings/auto
+  ${CMAKE_CURRENT_SOURCE_DIR}/cocos/scripting/lua-bindings/manual
   ${CMAKE_CURRENT_SOURCE_DIR}/extensions
   ${CMAKE_CURRENT_SOURCE_DIR}/external
   ${CMAKE_CURRENT_SOURCE_DIR}/external/tinyxml2
@@ -158,6 +160,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/external/webp/include/${PLATFORM_FOLDER}
   ${CMAKE_CURRENT_SOURCE_DIR}/external/glfw3/include/${PLATFORM_FOLDER}
   ${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/include/${PLATFORM_FOLDER}
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/websockets/include/${PLATFORM_FOLDER}
 )
 
 if(WIN32)
@@ -206,6 +209,7 @@ else()
     ${CMAKE_CURRENT_SOURCE_DIR}/external/webp/prebuilt/${PLATFORM_FOLDER}/${ARCH_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/external/png/prebuilt/${PLATFORM_FOLDER}/${ARCH_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/prebuilt/${PLATFORM_FOLDER}/${ARCH_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/websockets/prebuilt/${PLATFORM_FOLDER}/${ARCH_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/external/${PLATFORM_FOLDER}-specific/fmod/prebuilt/${ARCH_DIR}
   )
 
@@ -236,9 +240,14 @@ add_subdirectory(cocos/base)
 # cocos 2d library
 add_subdirectory(cocos/2d)
 
+if(BUILD_STORAGE)
+# cocos storage
+add_subdirectory(cocos/storage)
+endif(BUILD_STORAGE)
+
 if(BUILD_GUI)
-# gui
-add_subdirectory(cocos/gui)
+# ui
+add_subdirectory(cocos/ui)
 endif(BUILD_GUI)
 
 if(BUILD_NETWORK)
@@ -268,8 +277,8 @@ if(BUILD_EDITOR_COCOSTUDIO)
 add_subdirectory(cocos/editor-support/cocostudio)
 endif(BUILD_EDITOR_COCOSTUDIO)
 
-if(BUILD_LIBS_LUA)
 ## Scripting
+if(BUILD_LIBS_LUA)
 # lua
 add_subdirectory(external/lua/lua)
 
@@ -277,16 +286,19 @@ add_subdirectory(external/lua/lua)
 add_subdirectory(external/lua/tolua)
 
 # luabinding
-add_subdirectory(cocos/scripting)
+add_subdirectory(cocos/scripting/lua-bindings)
 endif(BUILD_LIBS_LUA)
 
 # build tests 
 
-if(BUILD_TestCpp)
-add_subdirectory(tests/test-cpp)
-endif(BUILD_TestCpp)
+add_subdirectory(tests/cpp-empty-test)
 
-if(BUILD_TestLua)
-add_subdirectory(tests/test-lua)
-endif(BUILD_TestLua)
+if(BUILD_CppTests)
+add_subdirectory(tests/cpp-tests)
+endif(BUILD_CppTests)
 
+add_subdirectory(tests/lua-empty-test/project)
+
+if(BUILD_LuaTests)
+add_subdirectory(tests/lua-tests/project)
+endif(BUILD_LuaTests)

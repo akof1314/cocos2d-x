@@ -44,7 +44,8 @@ THE SOFTWARE.
 #include "CCAutoreleasePool.h"
 #include "platform/CCFileUtils.h"
 #include "CCApplication.h"
-#include "CCLabelBMFont.h"
+#include "CCFontFNT.h"
+#include "CCFontAtlasCache.h"
 #include "CCActionManager.h"
 #include "CCAnimationCache.h"
 #include "CCTouch.h"
@@ -88,7 +89,7 @@ extern const char* cocos2dVersion(void);
 const char *Director::EVENT_PROJECTION_CHANGED = "director_projection_changed";
 const char *Director::EVENT_AFTER_DRAW = "director_after_draw";
 const char *Director::EVENT_AFTER_VISIT = "director_after_visit";
-const char *Director::EVENT_AFTER_UPDATE = "director_after_udpate";
+const char *Director::EVENT_AFTER_UPDATE = "director_after_update";
 
 Director* Director::getInstance()
 {
@@ -120,7 +121,7 @@ bool Director::init(void)
     // FPS
     _accumDt = 0.0f;
     _frameRate = 0.0f;
-    _FPSLabel = _SPFLabel = _drawnBatchesLabel = _drawnVerticesLabel = nullptr;
+    _FPSLabel = _drawnBatchesLabel = _drawnVerticesLabel = nullptr;
     _totalFrames = _frames = 0;
     _lastUpdate = new struct timeval;
 
@@ -134,15 +135,13 @@ bool Director::init(void)
 
     _openGLView = nullptr;
 
-    _cullingFrustum = new Frustum();
-
     _contentScaleFactor = 1.0f;
 
     // scheduler
     _scheduler = new Scheduler();
     // action manager
     _actionManager = new ActionManager();
-    _scheduler->scheduleUpdateForTarget(_actionManager, Scheduler::PRIORITY_SYSTEM, false);
+    _scheduler->scheduleUpdate(_actionManager, Scheduler::PRIORITY_SYSTEM, false);
 
     _eventDispatcher = new EventDispatcher();
     _eventAfterDraw = new EventCustom(EVENT_AFTER_DRAW);
@@ -159,8 +158,10 @@ bool Director::init(void)
     initTextureCache();
 
     _renderer = new Renderer;
-    _console = new Console;
 
+#if (CC_TARGET_PLATFORM != CC_PLATFORM_WINRT) && (CC_TARGET_PLATFORM != CC_PLATFORM_WP8)
+    _console = new Console;
+#endif
     return true;
 }
 
@@ -169,7 +170,6 @@ Director::~Director(void)
     CCLOGINFO("deallocing Director: %p", this);
 
     CC_SAFE_RELEASE(_FPSLabel);
-    CC_SAFE_RELEASE(_SPFLabel);
     CC_SAFE_RELEASE(_drawnVerticesLabel);
     CC_SAFE_RELEASE(_drawnBatchesLabel);
 
@@ -185,7 +185,10 @@ Director::~Director(void)
     delete _eventProjectionChanged;
 
     delete _renderer;
+
+#if (CC_TARGET_PLATFORM != CC_PLATFORM_WINRT) && (CC_TARGET_PLATFORM != CC_PLATFORM_WP8)
     delete _console;
+#endif
 
     // clean auto release pool
     PoolManager::destroyInstance();
@@ -276,27 +279,21 @@ void Director::drawScene()
 
     kmGLPushMatrix();
 
-    //construct the frustum
-    {
-        kmMat4 view;
-        kmMat4 projection;
-        kmGLGetMatrix(KM_GL_PROJECTION, &projection);
-        kmGLGetMatrix(KM_GL_MODELVIEW, &view);
-
-        _cullingFrustum->setupFromMatrix(view, projection);
-    }
+    // global identity matrix is needed... come on kazmath!
+    kmMat4 identity;
+    kmMat4Identity(&identity);
 
     // draw the scene
     if (_runningScene)
     {
-        _runningScene->visit();
+        _runningScene->visit(_renderer, identity, false);
         _eventDispatcher->dispatchEvent(_eventAfterVisit);
     }
 
     // draw the notifications node
     if (_notificationNode)
     {
-        _notificationNode->visit();
+        _notificationNode->visit(_renderer, identity, false);
     }
 
     if (_displayStats)
@@ -441,6 +438,12 @@ void Director::setProjection(Projection projection)
         case Projection::_2D:
             kmGLMatrixMode(KM_GL_PROJECTION);
             kmGLLoadIdentity();
+#if CC_TARGET_PLATFORM == CC_PLATFORM_WP8
+            if(getOpenGLView() != nullptr)
+            {
+                kmGLMultMatrix( getOpenGLView()->getOrientationMatrix());
+            }
+#endif
             kmMat4 orthoMatrix;
             kmMat4OrthographicProjection(&orthoMatrix, 0, size.width, 0, size.height, -1024, 1024);
             kmGLMultMatrix(&orthoMatrix);
@@ -456,21 +459,30 @@ void Director::setProjection(Projection projection)
 
             kmGLMatrixMode(KM_GL_PROJECTION);
             kmGLLoadIdentity();
-
+            
+#if CC_TARGET_PLATFORM == CC_PLATFORM_WP8
+            //if needed, we need to add a rotation for Landscape orientations on Windows Phone 8 since it is always in Portrait Mode
+            GLView* view = getOpenGLView();
+            if(getOpenGLView() != nullptr)
+            {
+                kmGLMultMatrix(getOpenGLView()->getOrientationMatrix());
+            }
+#endif
             // issue #1334
-            kmMat4PerspectiveProjection(&matrixPerspective, 60, (GLfloat)size.width/size.height, 0.1f, zeye*2);
-            // kmMat4PerspectiveProjection( &matrixPerspective, 60, (GLfloat)size.width/size.height, 0.1f, 1500);
+            kmMat4PerspectiveProjection(&matrixPerspective, 60, (GLfloat)size.width/size.height, 10, zeye+size.height/2);
+//            kmMat4PerspectiveProjection( &matrixPerspective, 60, (GLfloat)size.width/size.height, 0.1f, 1500);
 
             kmGLMultMatrix(&matrixPerspective);
 
-            kmGLMatrixMode(KM_GL_MODELVIEW);
-            kmGLLoadIdentity();
             kmVec3 eye, center, up;
             kmVec3Fill(&eye, size.width/2, size.height/2, zeye);
             kmVec3Fill(&center, size.width/2, size.height/2, 0.0f);
             kmVec3Fill(&up, 0.0f, 1.0f, 0.0f);
             kmMat4LookAt(&matrixLookup, &eye, &center, &up);
             kmGLMultMatrix(&matrixLookup);
+
+            kmGLMatrixMode(KM_GL_MODELVIEW);
+            kmGLLoadIdentity();
             break;
         }
 
@@ -492,11 +504,17 @@ void Director::setProjection(Projection projection)
 
 void Director::purgeCachedData(void)
 {
-    LabelBMFont::purgeCachedData();
+    FontFNT::purgeCachedData();
+    FontAtlasCache::purgeCachedData();
+
     if (s_SharedDirector->getOpenGLView())
     {
         SpriteFrameCache::getInstance()->removeUnusedSpriteFrames();
         _textureCache->removeUnusedTextures();
+
+        // Note: some tests such as ActionsTest are leaking refcounted textures
+        // There should be no test textures left in the cache
+        log("%s\n", _textureCache->getCachedTextureInfo().c_str());
     }
     FileUtils::getInstance()->purgeCachedEntries();
 }
@@ -540,6 +558,11 @@ static void GLToClipTransform(kmMat4 *transformOut)
 {
 	kmMat4 projection;
 	kmGLGetMatrix(KM_GL_PROJECTION, &projection);
+
+#if CC_TARGET_PLATFORM == CC_PLATFORM_WP8
+    //if needed, we need to undo the rotation for Landscape orientation in order to get the correct positions
+	kmMat4Multiply(&projection, Director::getInstance()->getOpenGLView()->getReverseOrientationMatrix(), &projection);
+#endif
 
 	kmMat4 modelview;
 	kmGLGetMatrix(KM_GL_MODELVIEW, &modelview);
@@ -740,13 +763,11 @@ void Director::purgeDirector()
     stopAnimation();
 
     CC_SAFE_RELEASE_NULL(_FPSLabel);
-    CC_SAFE_RELEASE_NULL(_SPFLabel);
     CC_SAFE_RELEASE_NULL(_drawnBatchesLabel);
     CC_SAFE_RELEASE_NULL(_drawnVerticesLabel);
-    CC_SAFE_DELETE(_cullingFrustum);
 
     // purge bitmap cache
-    LabelBMFont::purgeCachedData();
+    FontFNT::purgeCachedData();
 
     FontFreeType::shutdownFreeType();
 
@@ -848,35 +869,47 @@ void Director::resume()
 // updates the FPS every frame
 void Director::showStats()
 {
+    static unsigned long prevCalls = 0;
+    static unsigned long prevVerts = 0;
+
     ++_frames;
     _accumDt += _deltaTime;
     
-    if (_displayStats && _FPSLabel && _SPFLabel && _drawnBatchesLabel && _drawnVerticesLabel)
+    if (_displayStats && _FPSLabel && _drawnBatchesLabel && _drawnVerticesLabel)
     {
+        char buffer[30];
+
         if (_accumDt > CC_DIRECTOR_STATS_INTERVAL)
         {
-            char buffer[30];
-            sprintf(buffer, "%.3f", _secondsPerFrame);
-            _SPFLabel->setString(buffer);
-            
             _frameRate = _frames / _accumDt;
             _frames = 0;
             _accumDt = 0;
-            
-            sprintf(buffer, "%.1f", _frameRate);
-            _FPSLabel->setString(buffer);
-            
-            sprintf(buffer, "%4lu", (unsigned long)_renderer->getDrawnBatches());
-            _drawnBatchesLabel->setString(buffer);
 
-            sprintf(buffer, "%5lu", (unsigned long)_renderer->getDrawnVertices());
-            _drawnVerticesLabel->setString(buffer);
+            sprintf(buffer, "%.1f / %.3f", _frameRate, _secondsPerFrame);
+            _FPSLabel->setString(buffer);
         }
 
-        _drawnVerticesLabel->visit();
-        _drawnBatchesLabel->visit();
-        _FPSLabel->visit();
-        _SPFLabel->visit();
+        auto currentCalls = (unsigned long)_renderer->getDrawnBatches();
+        auto currentVerts = (unsigned long)_renderer->getDrawnVertices();
+        if( currentCalls != prevCalls ) {
+            sprintf(buffer, "GL calls:%6lu", currentCalls);
+            _drawnBatchesLabel->setString(buffer);
+            prevCalls = currentCalls;
+        }
+
+        if( currentVerts != prevVerts) {
+            sprintf(buffer, "GL verts:%6lu", currentVerts);
+            _drawnVerticesLabel->setString(buffer);
+            prevVerts = currentVerts;
+        }
+
+        // global identity matrix is needed... come on kazmath!
+        kmMat4 identity;
+        kmMat4Identity(&identity);
+
+        _drawnVerticesLabel->visit(_renderer, identity, false);
+        _drawnBatchesLabel->visit(_renderer, identity, false);
+        _FPSLabel->visit(_renderer, identity, false);
     }
 }
 
@@ -900,10 +933,9 @@ void Director::createStatsLabel()
 {
     Texture2D *texture = nullptr;
 
-    if (_FPSLabel && _SPFLabel)
+    if (_FPSLabel)
     {
         CC_SAFE_RELEASE_NULL(_FPSLabel);
-        CC_SAFE_RELEASE_NULL(_SPFLabel);
         CC_SAFE_RELEASE_NULL(_drawnBatchesLabel);
         CC_SAFE_RELEASE_NULL(_drawnVerticesLabel);
         _textureCache->removeTextureForKey("/cc_fps_images");
@@ -930,49 +962,37 @@ void Director::createStatsLabel()
      We want to use an image which is stored in the file named ccFPSImage.c 
      for any design resolutions and all resource resolutions. 
      
-     To achieve this,
-     
-     Firstly, we need to ignore 'contentScaleFactor' in 'AtlasNode' and 'LabelAtlas'.
+     To achieve this, we need to ignore 'contentScaleFactor' in 'AtlasNode' and 'LabelAtlas'.
      So I added a new method called 'setIgnoreContentScaleFactor' for 'AtlasNode',
      this is not exposed to game developers, it's only used for displaying FPS now.
-     
-     Secondly, the size of this image is 480*320, to display the FPS label with correct size, 
-     a factor of design resolution ratio of 480x320 is also needed.
      */
-    auto glview = Director::getInstance()->getOpenGLView();
-    float factor = glview->getDesignResolutionSize().height / 320.0f;
+    float scaleFactor = 1 / CC_CONTENT_SCALE_FACTOR();
 
     _FPSLabel = LabelAtlas::create();
     _FPSLabel->retain();
     _FPSLabel->setIgnoreContentScaleFactor(true);
     _FPSLabel->initWithString("00.0", texture, 12, 32 , '.');
-    _FPSLabel->setScale(factor);
-
-    _SPFLabel = LabelAtlas::create();
-    _SPFLabel->retain();
-    _SPFLabel->setIgnoreContentScaleFactor(true);
-    _SPFLabel->initWithString("0.000", texture, 12, 32, '.');
-    _SPFLabel->setScale(factor);
+    _FPSLabel->setScale(scaleFactor);
 
     _drawnBatchesLabel = LabelAtlas::create();
     _drawnBatchesLabel->retain();
     _drawnBatchesLabel->setIgnoreContentScaleFactor(true);
     _drawnBatchesLabel->initWithString("000", texture, 12, 32, '.');
-    _drawnBatchesLabel->setScale(factor);
+    _drawnBatchesLabel->setScale(scaleFactor);
 
     _drawnVerticesLabel = LabelAtlas::create();
     _drawnVerticesLabel->retain();
     _drawnVerticesLabel->setIgnoreContentScaleFactor(true);
     _drawnVerticesLabel->initWithString("00000", texture, 12, 32, '.');
-    _drawnVerticesLabel->setScale(factor);
+    _drawnVerticesLabel->setScale(scaleFactor);
 
 
     Texture2D::setDefaultAlphaPixelFormat(currentFormat);
 
-    _drawnVerticesLabel->setPosition(Point(0, 51*factor) + CC_DIRECTOR_STATS_POSITION);
-    _drawnBatchesLabel->setPosition(Point(12*factor, 34*factor) + CC_DIRECTOR_STATS_POSITION);
-    _SPFLabel->setPosition(Point(0, 17*factor) + CC_DIRECTOR_STATS_POSITION);
-    _FPSLabel->setPosition(Point(12*factor,0)+CC_DIRECTOR_STATS_POSITION);
+    const int height_spacing = 22 / CC_CONTENT_SCALE_FACTOR();
+    _drawnVerticesLabel->setPosition(Point(0, height_spacing*2) + CC_DIRECTOR_STATS_POSITION);
+    _drawnBatchesLabel->setPosition(Point(0, height_spacing*1) + CC_DIRECTOR_STATS_POSITION);
+    _FPSLabel->setPosition(Point(0, height_spacing*0)+CC_DIRECTOR_STATS_POSITION);
 }
 
 void Director::setContentScaleFactor(float scaleFactor)
@@ -1038,6 +1058,9 @@ void DisplayLinkDirector::startAnimation()
     _invalid = false;
 
     Application::getInstance()->setAnimationInterval(_animationInterval);
+    
+    // fix issue #3509, skip one fps to avoid incorrect time calculation.
+    setNextDeltaTimeZero(true);
 }
 
 void DisplayLinkDirector::mainLoop()

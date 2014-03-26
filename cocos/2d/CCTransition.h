@@ -49,7 +49,7 @@ class NodeGrid;
 /** @brief TransitionEaseScene can ease the actions of the scene protocol.
 @since v0.8.2
 */
-class CC_DLL TransitionEaseScene// : public Object
+class CC_DLL TransitionEaseScene// : public Ref
 {
 public:
     virtual ~TransitionEaseScene() {}
@@ -91,17 +91,19 @@ public:
     //
     // Overrides
     //
-    virtual void draw() override;
+    virtual void draw(Renderer *renderer, const kmMat4 &transform, bool transformUpdated) override;
     virtual void onEnter() override;
     virtual void onExit() override;
     virtual void cleanup() override;
-
-protected:
+    
+CC_CONSTRUCTOR_ACCESS:
     TransitionScene();
     virtual ~TransitionScene();
+
     /** initializes a transition with duration and incoming scene */
     bool initWithDuration(float t,Scene* scene);
-
+    
+protected:
     virtual void sceneOrder();
     void setNewScene(float dt);
 
@@ -123,14 +125,15 @@ class CC_DLL TransitionSceneOriented : public TransitionScene
 public:
     /** creates a base transition with duration and incoming scene */
     static TransitionSceneOriented * create(float t,Scene* scene, Orientation orientation);
-
-protected:
+    
+CC_CONSTRUCTOR_ACCESS:
     TransitionSceneOriented();
     virtual ~TransitionSceneOriented();
 
     /** initializes a transition with duration and incoming scene */
     bool initWithDuration(float t,Scene* scene,Orientation orientation);
 
+protected:
     Orientation _orientation;
 
 private:
@@ -570,14 +573,14 @@ public:
      * @js NA
      * @lua NA
      */
-    virtual void onEnter();
+    virtual void onEnter() override;
     /**
      * @js NA
      * @lua NA
      */
-    virtual void onExit();
-
-protected:
+    virtual void onExit() override;
+    
+CC_CONSTRUCTOR_ACCESS:
     TransitionFade();
     virtual ~TransitionFade();
 
@@ -585,6 +588,7 @@ protected:
     bool initWithDuration(float t, Scene*scene, const Color3B& color);
     bool initWithDuration(float t, Scene* scene);
 
+protected:
     Color4B _color;
 
 private:
@@ -609,7 +613,7 @@ public :
      * @js NA
      * @lua NA
      */
-    virtual void draw() override;
+    virtual void draw(Renderer *renderer, const kmMat4 &transform, bool transformUpdated) override;
     /**
      * @js NA
      * @lua NA
@@ -647,7 +651,7 @@ public :
     virtual void onEnter() override;
     virtual void onExit() override;
     virtual ActionInterval * easeActionWithAction(ActionInterval * action) override;
-    virtual void draw() override;
+    virtual void draw(Renderer *renderer, const kmMat4 &transform, bool transformUpdated) override;
 
 protected:
     TransitionTurnOffTiles();
@@ -680,7 +684,7 @@ public:
     virtual void onEnter() override;
     virtual ActionInterval * easeActionWithAction(ActionInterval * action) override;
     virtual void onExit() override;
-    virtual void draw() override;
+    virtual void draw(Renderer *renderer, const kmMat4 &transform, bool transformUpdated) override;
 protected:
     TransitionSplitCols();
     virtual ~TransitionSplitCols();
@@ -731,7 +735,7 @@ public:
     virtual void onEnter() override;
     virtual ActionInterval* easeActionWithAction(ActionInterval * action) override;
     virtual void onExit() override;
-    virtual void draw() override;
+    virtual void draw(Renderer *renderer, const kmMat4 &transform, bool transformUpdated) override;
 protected:
     TransitionFadeTR();
     virtual ~TransitionFadeTR();

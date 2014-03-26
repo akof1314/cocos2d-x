@@ -28,12 +28,12 @@ THE SOFTWARE.
 #ifndef __ACTIONS_CCACTION_H__
 #define __ACTIONS_CCACTION_H__
 
-#include "CCObject.h"
+#include "CCRef.h"
 #include "CCGeometry.h"
-#include "CCPlatformMacros.h"
 
 NS_CC_BEGIN
 
+class Node;
 /**
  * @addtogroup actions
  * @{
@@ -42,7 +42,7 @@ NS_CC_BEGIN
 /** 
 @brief Base class for Action objects.
  */
-class CC_DLL Action : public Object, public Clonable
+class CC_DLL Action : public Ref, public Clonable
 {
 public:
     /// Default tag used for all the actions
@@ -186,13 +186,14 @@ public:
     virtual void stop() override;
     virtual void step(float dt) override;
     virtual bool isDone() const  override;
-
-protected:
+    
+CC_CONSTRUCTOR_ACCESS:
     Speed();
     virtual ~Speed(void);
     /** initializes the action */
     bool initWithAction(ActionInterval *action, float speed);
 
+protected:
     float _speed;
     ActionInterval *_innerAction;
 
@@ -236,7 +237,7 @@ public:
     virtual bool isDone() const override;
     virtual void stop() override;
 
-protected:
+CC_CONSTRUCTOR_ACCESS:
     /**
      * @js ctor
      */
@@ -255,6 +256,7 @@ protected:
      * @lua NA
      */
     virtual ~Follow();
+    
     /**
      * Initializes the action with a set boundary or with no boundary.
      *
@@ -264,6 +266,7 @@ protected:
      */
     bool initWithTarget(Node *followedNode, const Rect& rect = Rect::ZERO);
 
+protected:
     // node to follow
     Node *_followedNode;
 

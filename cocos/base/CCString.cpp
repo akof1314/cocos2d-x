@@ -203,7 +203,7 @@ __Array* __String::componentsSeparatedByString(const char *delimiter)
     return result;
 }
 
-bool __String::isEqual(const Object* pObject)
+bool __String::isEqual(const Ref* pObject)
 {
     bool bRet = false;
     const __String* pStr = dynamic_cast<const __String*>(pObject);
@@ -224,7 +224,7 @@ __String* __String::create(const std::string& str)
     return ret;
 }
 
-__String* __String::createWithData(const unsigned char* data, int nLen)
+__String* __String::createWithData(const unsigned char* data, size_t nLen)
 {
     __String* ret = NULL;
     if (data != NULL)

@@ -81,6 +81,12 @@ public:
     virtual LanguageType getCurrentLanguage();
 		
     /**
+    @brief Get current language iso 639-1 code
+    @return Current language iso 639-1 code
+    */
+    virtual const char * getCurrentLanguageCode();
+			
+    /**
      @brief Get target platform
      */
     virtual Platform getTargetPlatform();
@@ -104,6 +110,7 @@ public:
 protected:
     static Application * sm_pSharedApplication;
     
+    long _animationInterval;  //micro second
     std::string _resourceRootPath;
     std::string _startupScriptFilename;
 };
